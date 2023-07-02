@@ -96,16 +96,34 @@ def planning():
 def notes():
     driver.get("https://myges.fr/student/marks")
 
-    # Récupération de tous les champs de texte dans la div
-    text_fields = driver.find_elements(By.CSS_SELECTOR,
-                                       ".mg_content .mg_inherit_bg span, .mg_content table tbody td:not(.mg_inherit_bg)")
+    # Récupération des en-têtes de colonne
+    headers = driver.find_elements(By.CSS_SELECTOR, ".mg_content table thead th")
 
-    # Parcours des champs de texte et affichage
-    for field in text_fields:
-        print(field.text)
+    # Récupération des valeurs des colonnes de données
+    rows = driver.find_elements(By.CSS_SELECTOR, ".mg_content table tbody tr")
+
     data_list = []
-    for field in text_fields:
-        data_list.append(field.text)
+    for row in rows:
+        # Création d'un dictionnaire pour stocker les valeurs de chaque ligne
+        data_dict = {}
+
+        # Parcours des cellules de la ligne
+        cells = row.find_elements(By.CSS_SELECTOR, "td")
+        for i, cell in enumerate(cells):
+            # Vérification si l'indice dépasse la longueur des en-têtes
+            if i >= len(headers):
+                break
+
+            # Récupération du nom d'en-tête et de la valeur de la cellule correspondante
+            header = headers[i].text.strip()
+            value = cell.text.strip()
+
+            # Ajout de la paire clé-valeur dans le dictionnaire
+            data_dict[header] = value
+
+        # Ajout du dictionnaire à la liste des données
+        data_list.append(data_dict)
+
     # Conversion de la liste en JSON
     notes_json = json.dumps(data_list)
 
@@ -115,6 +133,7 @@ def notes():
     # Écriture des données JSON dans un fichier
     with codecs.open("notes.json", "w", "utf-8") as file:
         file.write(notes_json)
+
 
 def eleves():
     driver.get("https://myges.fr/student/student-directory")
@@ -152,9 +171,9 @@ def eleves():
     with codecs.open("eleves.json", "w", "utf-8") as file:
         file.write(eleves_json)
 
-planning()
+#planning()
 notes()
-eleves()
+#eleves()
 
 
 driver.quit()
