@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import codecs
 from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -83,7 +84,7 @@ def planning():
 
                 # Imprimez la représentation JSON
                 print(planning_json)
-                with open("planning.json", "w") as file:
+                with codecs.open("planning.json", "w", "utf-8") as file:
                     file.write(planning_json)
             else:
                 print("Aucun planning n'a été trouvé dans la semaine.")
@@ -112,30 +113,48 @@ def notes():
     print(notes_json)
 
     # Écriture des données JSON dans un fichier
-    with open("notes.json", "w") as file:
+    with codecs.open("notes.json", "w", "utf-8") as file:
         file.write(notes_json)
 
+def eleves():
+    driver.get("https://myges.fr/student/student-directory")
 
-driver.get("https://myges.fr/student/student-directory")
-# Récupération de tous les champs de texte dans la div
-text_fields = driver.find_elements(By.CSS_SELECTOR,
-                                   ".mg_content .mg_inherit_bg span, .mg_content table tbody td:not(.mg_inherit_bg)")
+    # Récupération de tous les champs de texte dans la div
+    data_list = []
+    while True:
+        # Parcours des champs de texte et récupération des noms et des images
+        elements = driver.find_elements(By.CSS_SELECTOR, ".mg_content .mg_directory_block_container")
+        for element in elements:
+            name_element = element.find_element(By.CSS_SELECTOR, ".mg_directory_text")
+            image_element = element.find_element(By.CSS_SELECTOR, ".mg_directory_container img")
+            name = name_element.text
+            image_url = image_element.get_attribute("src")
+            data_list.append({"name": name, "image": image_url})
 
-# Parcours des champs de texte et affichage
-for field in text_fields:
-    print(field.text)
-data_list = []
-for field in text_fields:
-    data_list.append(field.text)
-# Conversion de la liste en JSON
-eleves_json = json.dumps(data_list)
+        # Recherche du bouton "Suivant" pour passer à la page suivante
+        next_button = driver.find_element(By.CSS_SELECTOR, ".ui-paginator-next")
+        if "ui-state-disabled" in next_button.get_attribute("class"):
+            # Si le bouton "Suivant" est désactivé, on sort de la boucle
+            break
+        else:
+            # Sinon, on clique sur le bouton "Suivant" pour passer à la page suivante
+            next_button.click()
+            # Attente pour laisser le temps à la page suivante de se charger
+            time.sleep(2)
 
-# Imprimer la représentation JSON
-print(eleves_json)
+    # Conversion de la liste en JSON
+    eleves_json = json.dumps(data_list, ensure_ascii=False)
 
-# Écriture des données JSON dans un fichier
-with open("eleves.json", "w") as file:
-    file.write(eleves_json)
+    # Affichage de la représentation JSON
+    print(eleves_json)
 
-# planning()
-# notes()
+    # Écriture des données JSON dans un fichier UTF-8
+    with codecs.open("eleves.json", "w", "utf-8") as file:
+        file.write(eleves_json)
+
+planning()
+notes()
+eleves()
+
+
+driver.quit()
