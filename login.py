@@ -45,21 +45,37 @@ while click_count < 4 and is_planning_present:
         # Attendez que le chargement soit terminé
         wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, "span.mg_loadingbar_text")))
 
-        # Attendez 2 secondes entre chaque clic sur le bouton "next"
-        time.sleep(2)
-
         # Vérifiez si l'élément spécifique est présent dans la semaine de l'emploi du temps
-        is_planning_present = driver.find_elements(By.CSS_SELECTOR, "div.fc-event-inner")
-
+        planning = driver.find_elements(By.CSS_SELECTOR, "div.fc-event-inner")
+        print(planning)
         click_count += 1
-    except Exception:
+        if not len(planning) == 0:
+            is_planning_present = False
+            print("La recherche du planning a été effectuée avec succès.")
+            print("-------------------------------------------------")
+
+            last_end_time = ""  # Initialisez last_end_time
+
+            for element in planning:
+                title_element = element.find_element(By.CSS_SELECTOR, "div.fc-event-title")
+                time_element = element.find_element(By.CSS_SELECTOR, "div.fc-event-time")
+                title = title_element.text.strip()
+                time = time_element.text.strip()
+
+                current_end_time = time.split(" - ")[1]  # Récupérer l'heure de fin du cours actuel
+
+                if last_end_time and current_end_time > last_end_time:
+                    print()  # Ajouter un espace entre les jours
+
+                print("| {:<30} | {:<12} |".format(title, time))
+
+                last_end_time = time.split(" - ")[1]  # Mettre à jour last_end_time avec l'heure de fin du cours actuel
+            print("-------------------------------------------------")
+        else:
+            print("Aucun planning n'a été trouvé dans la semaine.")
+    except Exception as e:
+        print(e)
         is_planning_present = False
         break
 
-if not is_planning_present:
-    print("Erreur : Aucun planning n'a été trouvé dans la semaine.")
-else:
-    print("La recherche du planning a été effectuée avec succès.")
-
-exec(open('data_planning.py').read())
-
+driver.quit()
